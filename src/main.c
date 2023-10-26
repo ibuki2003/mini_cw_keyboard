@@ -5,6 +5,10 @@
 #include <usbdrv.h>
 #include <stdbool.h>
 
+#include "morse.h"
+
+#define KEY_SPC 0x2c
+
 #define LED_PIN 2
 #define BTN_PIN 3
 #define TOUCH_IN_PIN 6
@@ -41,6 +45,18 @@ int main() {
 
   uint8_t t = 0; // timer state
 
+  /**
+    the value represents the morse code input
+
+    empty: 0
+    dot: v = v * 2 + 1
+    dash: v = v * 2 + 2
+
+    this enables us to use a single byte to represent the morse code input
+    */
+  uint8_t morse_value = 0;
+  uint8_t morse_len = 0;
+
   uint8_t pulser_cnt = 0;
 
   while (1) {
@@ -50,7 +66,7 @@ int main() {
     if (k && usbInterruptIsReady()) {
       if (k == 0xff) k = 0;
 
-      reportBuffer[0] = k;
+      reportBuffer[0] = k & 0x7f; // msb for shift key
       usbSetInterrupt(reportBuffer, sizeof(reportBuffer));
       k = k ? 0xff : 0; // release
     }
@@ -87,24 +103,39 @@ int main() {
     if (v) PORTA |= BIT(LED_PIN);
     else PORTA &= ~BIT(LED_PIN);
 
-    if (v) {
-      if (t == 0) {
-        // reset timer
-        TCNT1 = 0;
-        t = 1;
-      } else if (t == 1) {
-        if (TCNT1H_ > DASH_THRES) {
-          t = 2;
-        }
+    if (t == 0 && TCNT1H_ > DASH_THRES) {
+      t = 1;
+      if (v_last == 0) {
+        // commit char
+        k = morse_to_key(morse_value, morse_len);
+        morse_value = 0;
+        morse_len = 0;
       }
-    } else {
-      if (t) {
-        // DOT or DASH
-        k = (TCNT1H_ > DASH_THRES || t == 2) ? 0x2d : 0x37;
-        t = 0;
+
+    } else if (t == 1 && TCNT1H_ > DASH_THRES * 5) {
+      if (v_last == 0) {
+        t = 2;
+        // insert space
+        k = KEY_SPC;
       }
     }
-    v_last = v;
+
+    if (v != v_last) {
+      v_last = v;
+      if (v == 0) {
+        // falling edge
+        if (t == 1) {
+          // dash
+          morse_value = morse_value * 2 + 2;
+        } else {
+          // dot
+          morse_value = morse_value * 2 + 1;
+        }
+        ++morse_len;
+      }
+      TCNT1 = 0;
+      t = 0;
+    }
   }
 }
 
