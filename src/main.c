@@ -12,7 +12,11 @@
 
 #define BIT(x) (1 << (x))
 
+#define TCNT1H_ ((uint8_t)(TCNT1 >> 8))
+
 #define TOUCH_THRES 15
+
+#define DASH_THRES 0x20 // 0x20 * 256 / (20M / 256) ~ 105ms
 
 uint8_t reportBuffer[1];
 
@@ -20,6 +24,9 @@ int main() {
   // setup
   DDRA |= BIT(LED_PIN) | BIT(TOUCH_OUT_PIN);
   PORTA = 0;
+
+  TCCR1A = 0;
+  TCCR1B = (0b100 << CS10); // 256 prescaler
 
   usbInit();
   usbDeviceConnect();
@@ -31,6 +38,8 @@ int main() {
   uint8_t h = 0; // hysteresis
   bool v = 0; // current btn state
   bool v_last = 0; // last btn state
+
+  uint8_t t = 0; // timer state
 
   uint8_t pulser_cnt = 0;
 
@@ -78,8 +87,22 @@ int main() {
     if (v) PORTA |= BIT(LED_PIN);
     else PORTA &= ~BIT(LED_PIN);
 
-    if (v && !v_last) {
-      k = 0x04; // A
+    if (v) {
+      if (t == 0) {
+        // reset timer
+        TCNT1 = 0;
+        t = 1;
+      } else if (t == 1) {
+        if (TCNT1H_ > DASH_THRES) {
+          t = 2;
+        }
+      }
+    } else {
+      if (t) {
+        // DOT or DASH
+        k = (TCNT1H_ > DASH_THRES || t == 2) ? 0x2d : 0x37;
+        t = 0;
+      }
     }
     v_last = v;
   }
