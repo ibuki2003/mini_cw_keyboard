@@ -1,4 +1,4 @@
--D__AVR_ATmega8__
+-D__AVR_ATtiny44A__
 -I/usr/avr/include/
 -Isrc
 -Ilib/vusb/usbdrv/

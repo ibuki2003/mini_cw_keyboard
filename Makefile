@@ -6,7 +6,7 @@ SRCS := $(wildcard $(SRCDIR)/*.c) $(wildcard $(SRCDIR)/*.cpp)
 OBJS := $(addprefix $(OUTDIR)/,$(patsubst %.c,%.o,$(SRCS)))
 DEPS := $(OBJS:%.o=%.d)
 
-AVR_CHIP = atmega8
+AVR_CHIP = attiny44a
 AVR_WRIT = avrisp2
 AVR_PORT = /dev/ttyACM0
 # 20MHz
@@ -43,9 +43,9 @@ write: $(TARGET).hex
 write_fuse:
 	# TODO: update clock settings
 
-	# hfuse: 0b11001001
-	# lfuse: 0b11101111
-	avrdude -c $(AVR_WRIT) -P $(AVR_PORT) -p $(AVR_CHIP) -U lfuse:w:0xef:m -U hfuse:w:0xc9:m
+	# hfuse: 0b11011111
+	# lfuse: 0b01111110 (ceramic 20MHz clock)
+	avrdude -c $(AVR_WRIT) -P $(AVR_PORT) -p $(AVR_CHIP) -U lfuse:w:0xfe:m -U hfuse:w:0xdf:m
 
 # オブジェクトファイルと実行ファイル及び HEX ファイル削除
 .PHONY: clean
