@@ -8,7 +8,6 @@ uint8_t morse_to_key(uint8_t morse, uint8_t len) {
   }
 
   if (len == 8 && morse == 255) return 0x2a; // backspace
-  if (len == 5 && morse == 41) return 0x28; // enter (AR)
   return 0;
 }
 
@@ -56,4 +55,8 @@ PROGMEM const uint8_t MORSE_TABLE[128] = {
   [105] = 0x33, // ;
   [106] = 0x9e, // !
   [114] = 0x36, // ,
+
+  [ 18] = 0x2c, // SPC: ..--
+  [ 33] = 0x2a, // BS: ...-.
+  [ 41] = 0x28, // Return: .-.-.
 };

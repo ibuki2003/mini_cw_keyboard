@@ -7,8 +7,6 @@
 
 #include "morse.h"
 
-#define KEY_SPC 0x2c
-
 #define LED_PIN 2
 #define BTN_PIN 3
 #define TOUCH_IN_PIN 6
@@ -21,8 +19,9 @@
 #define TOUCH_THRES 15
 
 #define DASH_THRES 0x20 // 0x20 * 256 / (20M / 256) ~ 105ms
+#define BLANK_THRES 0x30
 
-uint8_t reportBuffer[1];
+uint8_t reportBuffer[2];
 
 int main() {
   // setup
@@ -38,6 +37,7 @@ int main() {
 
   // key to send at next interrupt
   uint8_t k = 0;
+  bool shift = 0;
 
   uint8_t h = 0; // hysteresis
   bool v = 0; // current btn state
@@ -66,7 +66,8 @@ int main() {
     if (k && usbInterruptIsReady()) {
       if (k == 0xff) k = 0;
 
-      reportBuffer[0] = k & 0x7f; // msb for shift key
+      reportBuffer[0] = (k & BIT(7)) >> 6; // Left Shift key
+      reportBuffer[1] = k & 0x7f; // msb for shift key
       usbSetInterrupt(reportBuffer, sizeof(reportBuffer));
       k = k ? 0xff : 0; // release
     }
@@ -103,20 +104,21 @@ int main() {
     if (v) PORTA |= BIT(LED_PIN);
     else PORTA &= ~BIT(LED_PIN);
 
-    if (t == 0 && TCNT1H_ > DASH_THRES) {
+    if (t == 0 && TCNT1H_ > (v_last ? DASH_THRES : BLANK_THRES)) {
       t = 1;
       if (v_last == 0) {
-        // commit char
-        k = morse_to_key(morse_value, morse_len);
+        if (morse_value == 30) {// shift key: ----
+          shift = !shift;
+        } else {
+          // commit char
+          k = morse_to_key(morse_value, morse_len);
+          // TODO: think of behaviour for non-alphabet keys
+          if (shift && k && k <= 0x1D) {
+            k |= BIT(7);
+          }
+        }
         morse_value = 0;
         morse_len = 0;
-      }
-
-    } else if (t == 1 && TCNT1H_ > DASH_THRES * 5) {
-      if (v_last == 0) {
-        t = 2;
-        // insert space
-        k = KEY_SPC;
       }
     }
 
