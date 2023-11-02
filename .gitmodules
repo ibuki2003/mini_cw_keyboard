@@ -1,0 +1,3 @@
+[submodule "program/lib/vusb"]
+	path = program/lib/vusb
+	url = https://github.com/obdev/v-usb
