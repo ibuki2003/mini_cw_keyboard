@@ -9,8 +9,8 @@
 
 #define LED_PIN 2
 #define BTN_PIN 3
-#define TOUCH_IN_PIN 6
-#define TOUCH_OUT_PIN 7
+#define TOUCH_IN_PIN 7
+#define TOUCH_OUT_PIN 6
 
 #define BIT(x) (1 << (x))
 
