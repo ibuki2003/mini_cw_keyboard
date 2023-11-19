@@ -9,6 +9,7 @@
 
 #define LED_PIN 2
 #define BTN_PIN 3
+#define JMP_PIN 5 // jumper to select keyboard layout; GND for US, open for JIS
 #define TOUCH_IN_PIN 7
 #define TOUCH_OUT_PIN 6
 
@@ -25,8 +26,9 @@ uint8_t reportBuffer[2];
 
 int main() {
   // setup
-  DDRA |= BIT(LED_PIN) | BIT(TOUCH_OUT_PIN);
-  PORTA = 0;
+  DDRA = BIT(LED_PIN) | BIT(TOUCH_OUT_PIN);
+  PORTA = BIT(JMP_PIN); // pull-up for input pin
+  // MCUCR &= ~BIT(PUD); // allowed by default
 
   TCCR1A = 0;
   TCCR1B = (0b100 << CS10); // 256 prescaler
@@ -111,7 +113,11 @@ int main() {
           shift = !shift;
         } else {
           // commit char
-          k = morse_to_key(morse_value, morse_len);
+          k = morse_to_key(
+            morse_value,
+            morse_len,
+            (PINA & BIT(JMP_PIN)) // read jumper
+          );
           // TODO: think of behaviour for non-alphabet keys
           if (shift && k && k <= 0x1D) {
             k |= BIT(7);

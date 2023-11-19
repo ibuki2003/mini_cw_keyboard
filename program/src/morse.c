@@ -1,10 +1,23 @@
 #include "morse.h"
 #include <avr/pgmspace.h>
 
-uint8_t morse_to_key(uint8_t morse, uint8_t len) {
+const uint8_t MORSE_TABLE[];
+const uint8_t MORSE_SYMBOLS_TABLE[][3];
+
+uint8_t morse_to_key(uint8_t morse, uint8_t len, bool layout_jis) {
   if (len == 0) return 0;
   if (len <= 6) {
-    return pgm_read_byte(&(MORSE_TABLE[morse]));
+    uint8_t v = pgm_read_byte(&(MORSE_TABLE[morse]));
+    if (v) return v;
+
+    uint8_t (*p)[3] = &MORSE_SYMBOLS_TABLE[0];
+    uint8_t k;
+    while ((k = pgm_read_byte(&(*p)[0]))) {
+      if (k == morse) {
+        return pgm_read_byte(&((*p)[layout_jis ? 2 : 1]));
+      }
+      p++;
+    }
   }
 
   if (len == 7 && morse == 136) return 0x21 | 0x80; // $
@@ -60,33 +73,23 @@ PROGMEM const uint8_t MORSE_TABLE[128] = {
   [106] = 0x1e | 0x80, // !
   [114] = 0x36, // ,
 
-  // key-layout specific symbols
-  #if 1
-    // JIS layout
-    [ 41] = 0x33 | 0x80, // +
-    [ 48] = 0x2d | 0x80, // =
-    [ 53] = 0x25 | 0x80, // (
-    [108] = 0x26 | 0x80, // )
-    [ 76] = 0x87 | 0x80, // _
-    [ 93] = 0x24 | 0x80, // '
-    [ 81] = 0x1f | 0x80, // "
-    [ 89] = 0x2f | 0x80, // @
-    [119] = 0x34, // :
-  #else
-    // US layout
-    [ 41] = 0x2e | 0x80, // +
-    [ 48] = 0x2e, // =
-    [ 53] = 0x26 | 0x80, // (
-    [108] = 0x27 | 0x80, // )
-    [ 76] = 0x2d | 0x80, // _
-    [ 93] = 0x34, // '
-    [ 81] = 0x34 | 0x80, // "
-    [ 89] = 0x1f | 0x80, // @
-    [119] = 0x33 | 0x80, // :
-  #endif
-
   // special keys
   [ 18] = 0x2c, // SPC: ..--
   [ 20] = 0x28, // Return: .-.-
   [ 33] = 0x2a, // BS: ...-.
+};
+
+// key-layout specific symbols
+PROGMEM const uint8_t MORSE_SYMBOLS_TABLE[][3] = {
+  // idx, US, JIS
+  { 41, 0x2e | 0x80, 0x33 | 0x80 }, // +
+  { 48, 0x2e       , 0x2d | 0x80 }, // =
+  { 53, 0x26 | 0x80, 0x25 | 0x80 }, // (
+  {108, 0x27 | 0x80, 0x26 | 0x80 }, // )
+  { 76, 0x2d | 0x80, 0x87 | 0x80 }, // _
+  { 93, 0x34       , 0x24 | 0x80 }, // '
+  { 81, 0x34 | 0x80, 0x1f | 0x80 }, // "
+  { 89, 0x1f | 0x80, 0x2f | 0x80 }, // @
+  {119, 0x33 | 0x80, 0x34        }, // :
+  {0, 0, 0}, // end
 };
