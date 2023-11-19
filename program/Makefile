@@ -47,7 +47,7 @@ write_fuse:
 	# lfuse: 0b01111110 (ceramic 20MHz clock)
 	avrdude -c $(AVR_WRIT) -P $(AVR_PORT) -p $(AVR_CHIP) -U lfuse:w:0xfe:m -U hfuse:w:0xdf:m
 
-# オブジェクトファイルと実行ファイル及び HEX ファイル削除
-.PHONY: clean
 clean:
 	rm $(OUTDIR) -rf
+
+.PHONY: clean write write_fuse
