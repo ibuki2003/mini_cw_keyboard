@@ -44,7 +44,7 @@ write_fuse:
 	# TODO: update clock settings
 
 	# hfuse: 0b11011111
-	# lfuse: 0b01111110 (ceramic 20MHz clock)
+	# lfuse: 0b11111110 (ceramic 20MHz clock)
 	avrdude -c $(AVR_WRIT) -P $(AVR_PORT) -p $(AVR_CHIP) -U lfuse:w:0xfe:m -U hfuse:w:0xdf:m
 
 clean:
