@@ -17,10 +17,10 @@
 
 #define TCNT1H_ ((uint8_t)(TCNT1 >> 8))
 
-#define TOUCH_THRES 15
+#define TOUCH_THRES 9
 
-#define DASH_THRES 0x20 // 0x20 * 256 / (20M / 256) ~ 105ms
-#define BLANK_THRES 0x30
+#define DASH_THRES 0x30 // 0x30 * 256 / (20M / 256) ~ 150 ms
+#define BLANK_THRES 0x50
 
 uint8_t reportBuffer[2];
 
