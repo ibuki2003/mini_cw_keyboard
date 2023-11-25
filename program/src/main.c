@@ -65,11 +65,19 @@ int main() {
     wdt_reset();
     usbPoll();
 
+    const bool layout_jis = PINA & BIT(JMP_PIN); // read jumper
+
     if (k && usbInterruptIsReady()) {
       if (k == 0xff) k = 0;
-
-      reportBuffer[0] = (k & BIT(7)) >> 6; // Left Shift key
-      reportBuffer[1] = k & 0x7f; // msb for shift key
+      if (k == 0x87 && layout_jis) {
+        // this is a hack to send '_' on JIS layout
+        // keycode of '_' is greater than 0x7f
+        reportBuffer[0] = 0b10;
+        reportBuffer[1] = 0x87;
+      } else {
+        reportBuffer[0] = (k & BIT(7)) >> 6; // Left Shift key
+        reportBuffer[1] = k & 0x7f; // msb for shift key
+      }
       usbSetInterrupt(reportBuffer, sizeof(reportBuffer));
       k = k ? 0xff : 0; // release
     }
@@ -116,9 +124,8 @@ int main() {
           k = morse_to_key(
             morse_value,
             morse_len,
-            (PINA & BIT(JMP_PIN)) // read jumper
+            layout_jis
           );
-          // TODO: think of behaviour for non-alphabet keys
           if (shift && k && k <= 0x1D) {
             k |= BIT(7);
           }
